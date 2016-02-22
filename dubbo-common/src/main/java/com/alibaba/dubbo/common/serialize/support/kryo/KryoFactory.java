@@ -115,6 +115,10 @@ public abstract class KryoFactory {
         kryo.register(float[].class);
         kryo.register(double[].class);
 
+        // 增加通用的Kryo请求及返回,edited by Dimmacro
+        kryo.register(RestRequest.class);
+        kryo.register(RestResponse.class);
+        
         for (Class clazz : registrations) {
             kryo.register(clazz);
         }
@@ -122,6 +126,7 @@ public abstract class KryoFactory {
         for (Class clazz : SerializableClassRegistry.getRegisteredClasses()) {
             kryo.register(clazz);
         }
+        
 
         return kryo;
     }
