@@ -16,6 +16,8 @@
 
 package com.alibaba.dubbo.rpc.protocol.dubbo;
 
+import static com.alibaba.dubbo.rpc.protocol.dubbo.CallbackServiceCodec.decodeInvocationArgument;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,7 +30,6 @@ import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.serialize.Cleanable;
 import com.alibaba.dubbo.common.serialize.ObjectInput;
 import com.alibaba.dubbo.common.serialize.OptimizedSerialization;
-import com.alibaba.dubbo.common.serialize.support.kryo.KryoSerialization;
 import com.alibaba.dubbo.common.utils.Assert;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
 import com.alibaba.dubbo.common.utils.StringUtils;
@@ -38,8 +39,6 @@ import com.alibaba.dubbo.remoting.Decodeable;
 import com.alibaba.dubbo.remoting.exchange.Request;
 import com.alibaba.dubbo.remoting.transport.CodecSupport;
 import com.alibaba.dubbo.rpc.RpcInvocation;
-
-import static com.alibaba.dubbo.rpc.protocol.dubbo.CallbackServiceCodec.decodeInvocationArgument;
 
 /**
  * @author <a href="mailto:gang.lvg@alibaba-inc.com">kimi</a>
@@ -103,7 +102,11 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
                 Class<?>[] pts;
 
                 // NOTICE modified by lishen
-                int argNum = in.readInt();
+                int argNum = -1;
+
+                if (CodecSupport.getSerialization(channel.getUrl(), serializationType) instanceof OptimizedSerialization) {
+                    argNum = in.readInt();
+                }
                 if (argNum >= 0) {
                     if (argNum == 0) {
                         pts = DubboCodec.EMPTY_CLASS_ARRAY;
@@ -123,6 +126,11 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
                         }
                     }
                 } else {
+            	 /** edited By Dimmacro 
+            	  * 2015年12月28日19:08:35 
+            	  *	如果argNum为-1，说明要么含有复杂模式（即参数为null或者传入的参数类型与定义的类型不一致，比如ArrayList与List）
+            	  * 要么非OptimizedSerialization子类的序列化方式，都需要从去参数类型的描述
+            	  **/
                     String desc = in.readUTF();
                     if (desc.length() == 0) {
                         pts = DubboCodec.EMPTY_CLASS_ARRAY;

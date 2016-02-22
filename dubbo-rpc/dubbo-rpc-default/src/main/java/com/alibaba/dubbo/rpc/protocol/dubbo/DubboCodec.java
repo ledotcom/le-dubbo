@@ -181,13 +181,21 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
 
         // NOTICE modified by lishen
         // TODO
-        if (getSerialization(channel) instanceof OptimizedSerialization && !containComplexArguments(inv)) {
-            out.writeInt(inv.getParameterTypes().length);
+        if (getSerialization(channel) instanceof OptimizedSerialization) {
+            if (!containComplexArguments(inv)) {
+                out.writeInt(inv.getParameterTypes().length);
+            } else {
+                out.writeInt(-1);
+                /** edited By Dimmacro 
+	           	  * 2015年12月28日19:08:35 
+	           	  *	如果含有复杂模式（即参数为null或者传入的参数类型与定义的类型不一致，比如ArrayList与List）
+	           	  * 则需要把方法的标准返回类型描述序列化过去，方便服务端做反序列化查询
+	           	**/
+                out.writeUTF(ReflectUtils.getDesc(inv.getParameterTypes()));
+            }
         } else {
-            out.writeInt(-1);
             out.writeUTF(ReflectUtils.getDesc(inv.getParameterTypes()));
         }
-
         Object[] args = inv.getArguments();
         if (args != null)
             for (int i = 0; i < args.length; i++){
