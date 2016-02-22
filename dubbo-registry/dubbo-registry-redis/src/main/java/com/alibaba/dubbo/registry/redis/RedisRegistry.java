@@ -33,17 +33,20 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.JedisSentinelPool;
+import redis.clients.util.Pool;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.NamedThreadFactory;
+import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.common.utils.UrlUtils;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.support.FailbackRegistry;
@@ -53,12 +56,15 @@ import com.alibaba.dubbo.rpc.RpcException;
  * RedisRegistry
  * 
  * @author william.liangf
+ * 新增redis的用户名密码及sentine哨兵模式 Dimmacro 2016年2月18日16:53:57
  */
 public class RedisRegistry extends FailbackRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisRegistry.class);
 
     private static final int DEFAULT_REDIS_PORT = 6379;
+    
+    private static final int DEFAULT_REDIS_SENTINEL_PORT = 26379;
 
     private final static String DEFAULT_ROOT = "dubbo";
 
@@ -68,7 +74,7 @@ public class RedisRegistry extends FailbackRegistry {
     
     private final String root;
 
-    private final Map<String, JedisPool> jedisPools = new ConcurrentHashMap<String, JedisPool>();
+    private final Map<String,  Pool<Jedis>> jedisPools = new ConcurrentHashMap<String, Pool<Jedis>>();
 
     private final ConcurrentMap<String, Notifier> notifiers = new ConcurrentHashMap<String, Notifier>();
     
@@ -85,24 +91,24 @@ public class RedisRegistry extends FailbackRegistry {
         if (url.isAnyHost()) {
     		throw new IllegalStateException("registry address == null");
     	}
-        GenericObjectPool.Config config = new GenericObjectPool.Config();
-        config.testOnBorrow = url.getParameter("test.on.borrow", true);
-        config.testOnReturn = url.getParameter("test.on.return", false);
-        config.testWhileIdle = url.getParameter("test.while.idle", false);
+        GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+        config.setTestOnBorrow(url.getParameter("test.on.borrow", true));
+        config.setTestOnReturn(url.getParameter("test.on.return", false));
+        config.setTestWhileIdle(url.getParameter("test.while.idle", false));
         if (url.getParameter("max.idle", 0) > 0)
-            config.maxIdle = url.getParameter("max.idle", 0);
+            config.setMaxIdle(url.getParameter("max.idle", GenericObjectPoolConfig.DEFAULT_MAX_IDLE));
         if (url.getParameter("min.idle", 0) > 0)
-            config.minIdle = url.getParameter("min.idle", 0);
+            config.setMinIdle(url.getParameter("min.idle", GenericObjectPoolConfig.DEFAULT_MIN_IDLE));
         if (url.getParameter("max.active", 0) > 0)
-            config.maxActive = url.getParameter("max.active", 0);
+            config.setMaxTotal(url.getParameter("max.active", GenericObjectPoolConfig.DEFAULT_MAX_TOTAL));
         if (url.getParameter("max.wait", url.getParameter("timeout", 0)) > 0)
-            config.maxWait = url.getParameter("max.wait", url.getParameter("timeout", 0));
+            config.setMaxWaitMillis(url.getParameter("max.wait", url.getParameter("timeout", GenericObjectPoolConfig.DEFAULT_MAX_WAIT_MILLIS)));
         if (url.getParameter("num.tests.per.eviction.run", 0) > 0)
-            config.numTestsPerEvictionRun = url.getParameter("num.tests.per.eviction.run", 0);
+            config.setNumTestsPerEvictionRun(url.getParameter("num.tests.per.eviction.run", GenericObjectPoolConfig.DEFAULT_NUM_TESTS_PER_EVICTION_RUN));
         if (url.getParameter("time.between.eviction.runs.millis", 0) > 0)
-            config.timeBetweenEvictionRunsMillis = url.getParameter("time.between.eviction.runs.millis", 0);
+            config.setTimeBetweenEvictionRunsMillis(url.getParameter("time.between.eviction.runs.millis", GenericObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS_MILLIS));
         if (url.getParameter("min.evictable.idle.time.millis", 0) > 0)
-            config.minEvictableIdleTimeMillis = url.getParameter("min.evictable.idle.time.millis", 0);
+            config.setMinEvictableIdleTimeMillis(url.getParameter("min.evictable.idle.time.millis", GenericObjectPoolConfig.DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS));
         
         String cluster = url.getParameter("cluster", "failover");
         if (! "failover".equals(cluster) && ! "replicate".equals(cluster)) {
@@ -110,12 +116,23 @@ public class RedisRegistry extends FailbackRegistry {
         }
         replicate = "replicate".equals(cluster);
         
+        // 处理redis的密码及database号问题 Dimmacro 2016年2月3日21:34:20
+        // 新增支持redis注册中心哨兵模式，此处配置了mastername即判断为哨兵模式 Dimmacro 2016年2月18日16:38:01
+        String masterName = url.getParameter("redis.mastername");
+        
+        String redisPassword = url.getParameter("redis.password","");
+        int redisDatabaseIndex = Integer.parseInt(url.getParameter("redis.databaseindex","0"));
+        
         List<String> addresses = new ArrayList<String>();
         addresses.add(url.getAddress());
         String[] backups = url.getParameter(Constants.BACKUP_KEY, new String[0]);
         if (backups != null && backups.length > 0) {
             addresses.addAll(Arrays.asList(backups));
         }
+        
+        boolean isSentinel = StringUtils.isNotEmpty(masterName); //如果masterName不为空，则判断为哨兵模式
+        Set<String> sentinelSet = new HashSet<>();
+        		
         for (String address : addresses) {
             int i = address.indexOf(':');
             String host;
@@ -125,10 +142,18 @@ public class RedisRegistry extends FailbackRegistry {
                 port = Integer.parseInt(address.substring(i + 1));
             } else {
                 host = address;
-                port = DEFAULT_REDIS_PORT;
+                port = isSentinel?DEFAULT_REDIS_SENTINEL_PORT:DEFAULT_REDIS_PORT;
             }
-            this.jedisPools.put(address, new JedisPool(config, host, port, 
-                    url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT)));
+            if(isSentinel){
+            	sentinelSet.add(host+":"+port);
+            }else{
+            	this.jedisPools.put(address, new JedisPool(config, host, port, 
+            			url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT),redisPassword,redisDatabaseIndex));
+            }
+        }
+        // 如果sentinelSet不为空，说明是哨兵模式 Dimmacro
+        if(!sentinelSet.isEmpty()){
+        	this.jedisPools.put(StringUtils.join(sentinelSet, Constants.COMMA_SEPARATOR),new JedisSentinelPool(masterName, sentinelSet, config, url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT),redisPassword,redisDatabaseIndex));
         }
         
         this.reconnectPeriod = url.getParameter(Constants.REGISTRY_RECONNECT_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RECONNECT_PERIOD);
@@ -154,8 +179,8 @@ public class RedisRegistry extends FailbackRegistry {
     }
     
     private void deferExpired() {
-        for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
-            JedisPool jedisPool = entry.getValue();
+        for (Map.Entry<String,  Pool<Jedis>> entry : jedisPools.entrySet()) {
+        	 Pool<Jedis> jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
@@ -213,7 +238,7 @@ public class RedisRegistry extends FailbackRegistry {
     }
 
     public boolean isAvailable() {
-        for (JedisPool jedisPool : jedisPools.values()) {
+        for (Pool<Jedis> jedisPool : jedisPools.values()) {
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
@@ -244,8 +269,8 @@ public class RedisRegistry extends FailbackRegistry {
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
         }
-        for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
-            JedisPool jedisPool = entry.getValue();
+        for (Map.Entry<String,  Pool<Jedis>> entry : jedisPools.entrySet()) {
+        	 Pool<Jedis> jedisPool = entry.getValue();
             try {
                 jedisPool.destroy();
             } catch (Throwable t) {
@@ -261,8 +286,8 @@ public class RedisRegistry extends FailbackRegistry {
         String expire = String.valueOf(System.currentTimeMillis() + expirePeriod);
         boolean success = false;
         RpcException exception = null;
-        for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
-            JedisPool jedisPool = entry.getValue();
+        for (Map.Entry<String,  Pool<Jedis>> entry : jedisPools.entrySet()) {
+        	 Pool<Jedis> jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
@@ -294,8 +319,8 @@ public class RedisRegistry extends FailbackRegistry {
         String value = url.toFullString();
         RpcException exception = null;
         boolean success = false;
-        for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
-            JedisPool jedisPool = entry.getValue();
+        for (Map.Entry<String,  Pool<Jedis>> entry : jedisPools.entrySet()) {
+        	 Pool<Jedis> jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
@@ -335,8 +360,8 @@ public class RedisRegistry extends FailbackRegistry {
         }
         boolean success = false;
         RpcException exception = null;
-        for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
-            JedisPool jedisPool = entry.getValue();
+        for (Map.Entry<String,  Pool<Jedis>> entry : jedisPools.entrySet()) {
+        	 Pool<Jedis> jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
@@ -471,9 +496,9 @@ public class RedisRegistry extends FailbackRegistry {
 
     private class NotifySub extends JedisPubSub {
         
-        private final JedisPool jedisPool;
+        private final  Pool<Jedis> jedisPool;
 
-        public NotifySub(JedisPool jedisPool) {
+        public NotifySub(Pool<Jedis> jedisPool) {
             this.jedisPool = jedisPool;
         }
 
@@ -573,8 +598,8 @@ public class RedisRegistry extends FailbackRegistry {
                 try {
                     if (! isSkip()) {
                         try {
-                            for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
-                                JedisPool jedisPool = entry.getValue();
+                            for (Map.Entry<String,  Pool<Jedis>> entry : jedisPools.entrySet()) {
+                            	 Pool<Jedis> jedisPool = entry.getValue();
                                 try {
                                     jedis = jedisPool.getResource();
                                     try {
