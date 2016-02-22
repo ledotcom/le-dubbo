@@ -785,6 +785,9 @@ public final class ReflectUtils {
 	public static Method findMethodByMethodSignature(Class<?> clazz, String methodName, String[] parameterTypes)
 	        throws NoSuchMethodException, ClassNotFoundException {
 	    String signature = methodName;
+	    // 解决如果多个类拥有相同的方法以及方法签名和返回值的情况下,会造成方法覆盖的问题 fixed by auther.
+	    signature = clazz.getName() + "." + methodName;
+	    
         if(parameterTypes != null && parameterTypes.length > 0){
             signature = methodName + StringUtils.join(parameterTypes);
         }
