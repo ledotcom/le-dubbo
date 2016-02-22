@@ -8,3 +8,6 @@ le-dubbo 承诺完全同步dubbox 与dubbo的最新代码版本功能。
 邓宏 乐视电子商务 denghong1@le.com http://www.cnblogs.com/dimmacro QQ:810259563
 
 由于目前dubbox和dubbo活跃性不太好，且目前各公司对dubbo都有较大使用更新需求，欢迎大家加入le-dubbo的维护。
+
+#升级维护说明
+le-dubbo主要是为解决乐视商城在使用dubbox过程中遇到的各种需求及bug修改，使用Git的版本推荐管理方式，即采用分支开发，使用稳定后同步到主干master的方式，既可以保证分支的快速迭代开发，也可以保证主干的稳定。为方便区分，每个分支的命名格式为：ledubbo-2.8.4.x，其中x为变动版本，主要是新增一些小需求改动及修改bug，后续如果改动较大，会考虑升级第三个版本号。
