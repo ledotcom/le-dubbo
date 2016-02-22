@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -442,7 +443,13 @@ public class PojoUtils {
 	                            if (! method.isAccessible())
 	                                method.setAccessible(true);
 	                            Type ptype = method.getGenericParameterTypes()[0];
-	                            value = realize0(value, method.getParameterTypes()[0], ptype, history);
+	                            if(ptype instanceof TypeVariable && null != genericType){
+	                            	// 修改by Dimmacro ,如果方法的参数类型是泛型，则利用返回反射设值，此处仍有bug，只支持单个泛型情况。2016年1月25日13:22:30 
+	                            	ptype = getGenericClassByIndex(genericType, 0);
+	                            	value = realize0(value,  (Class<?>)ptype, ptype, history);
+	                            }else{
+	                            	value = realize0(value,  method.getParameterTypes()[0], ptype, history);
+	                            }
 	                            try {
 	                                method.invoke(dest, value);
 	                            } catch (Exception e) {

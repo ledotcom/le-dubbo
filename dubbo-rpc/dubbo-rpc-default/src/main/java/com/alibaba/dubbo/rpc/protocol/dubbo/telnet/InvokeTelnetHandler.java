@@ -92,7 +92,9 @@ public class InvokeTelnetHandler implements TelnetHandler {
         if (invoker != null) {
             if (invokeMethod != null) {
                 try {
-                    Object[] array = PojoUtils.realize(list.toArray(), invokeMethod.getParameterTypes());
+                    //Object[] array = PojoUtils.realize(list.toArray(), invokeMethod.getParameterTypes());
+                	// 修复invoke调用泛型报错的bug，改为将泛型信息传入 Dimmacro 2016年1月25日10:37:17
+                    Object[] array = PojoUtils.realize(list.toArray(), invokeMethod.getParameterTypes(),invokeMethod.getGenericParameterTypes());
                     RpcContext.getContext().setLocalAddress(channel.getLocalAddress()).setRemoteAddress(channel.getRemoteAddress());
                     long start = System.currentTimeMillis();
                     Object result = invoker.invoke(new RpcInvocation(invokeMethod, array)).recreate();
