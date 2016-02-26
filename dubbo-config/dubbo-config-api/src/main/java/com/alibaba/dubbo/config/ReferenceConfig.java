@@ -158,7 +158,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     private void init() {
-	    if (initialized) {
+	    if (initialized && null != ref) {
 	        return;
 	    }
 	    initialized = true;
