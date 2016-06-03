@@ -180,9 +180,9 @@ public class ThriftCodecTest {
 
         RpcResult result = ( RpcResult ) response.getResult();
 
-        Assert.assertTrue( result.getResult() instanceof String );
+        Assert.assertTrue( result.getValue() instanceof String );
 
-        Assert.assertEquals( methodResult.success, result.getResult() );
+        Assert.assertEquals( methodResult.success, result.getValue() );
 
     }
 
@@ -264,7 +264,7 @@ public class ThriftCodecTest {
         Request request = createRequest();
 
         RpcResult rpcResult = new RpcResult();
-        rpcResult.setResult( "Hello, World!" );
+        rpcResult.setValue( "Hello, World!" );
 
         Response response = new Response();
         response.setResult( rpcResult );
