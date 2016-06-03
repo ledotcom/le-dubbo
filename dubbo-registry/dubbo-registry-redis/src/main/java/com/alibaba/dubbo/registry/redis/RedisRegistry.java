@@ -59,6 +59,8 @@ import com.alibaba.dubbo.rpc.RpcException;
  * 新增redis的用户名密码及sentine哨兵模式 Dimmacro 2016年2月18日16:53:57
  */
 public class RedisRegistry extends FailbackRegistry {
+	
+	public static final String REDIS_TYPE_SENTINEL = "sentinel";
 
     private static final Logger logger = LoggerFactory.getLogger(RedisRegistry.class);
 
@@ -117,10 +119,9 @@ public class RedisRegistry extends FailbackRegistry {
         replicate = "replicate".equals(cluster);
         
         // 处理redis的密码及database号问题 Dimmacro 2016年2月3日21:34:20
-        // 新增支持redis注册中心哨兵模式，此处配置了mastername即判断为哨兵模式 Dimmacro 2016年2月18日16:38:01
-        String masterName = url.getParameter("redis.mastername");
+        String redisUserName = url.getUsername(); // 如果是哨兵模式，以用户名作为mastername
+        String redisPassword = url.getPassword();
         
-        String redisPassword = url.getParameter("redis.password","");
         int redisDatabaseIndex = Integer.parseInt(url.getParameter("redis.databaseindex","0"));
         
         List<String> addresses = new ArrayList<String>();
@@ -130,7 +131,8 @@ public class RedisRegistry extends FailbackRegistry {
             addresses.addAll(Arrays.asList(backups));
         }
         
-        boolean isSentinel = StringUtils.isNotEmpty(masterName); //如果masterName不为空，则判断为哨兵模式
+        String redisType = url.getParameter("redis.type", "");
+        boolean isSentinel = REDIS_TYPE_SENTINEL.equalsIgnoreCase(redisType); //根据配置的redis.type判断是否为哨兵模式
         Set<String> sentinelSet = new HashSet<>();
         		
         for (String address : addresses) {
@@ -153,7 +155,7 @@ public class RedisRegistry extends FailbackRegistry {
         }
         // 如果sentinelSet不为空，说明是哨兵模式 Dimmacro
         if(!sentinelSet.isEmpty()){
-        	this.jedisPools.put(StringUtils.join(sentinelSet, Constants.COMMA_SEPARATOR),new JedisSentinelPool(masterName, sentinelSet, config, url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT),redisPassword,redisDatabaseIndex));
+        	this.jedisPools.put(StringUtils.join(sentinelSet, Constants.COMMA_SEPARATOR),new JedisSentinelPool(redisUserName, sentinelSet, config, url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT),redisPassword,redisDatabaseIndex));
         }
         
         this.reconnectPeriod = url.getParameter(Constants.REGISTRY_RECONNECT_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RECONNECT_PERIOD);
@@ -451,6 +453,7 @@ public class RedisRegistry extends FailbackRegistry {
                 urls.add(url.setProtocol(Constants.EMPTY_PROTOCOL)
                         .setAddress(Constants.ANYHOST_VALUE)
                         .setPath(toServiceName(key))
+                        .setServiceInterface(toServiceName(key)) //增加serviceInterface,否则会出现服务停掉后管理端删不掉的情况，参见RegistryServerSync.notify  Dimmacro 2016年3月18日16:32:42
                         .addParameter(Constants.CATEGORY_KEY, category));
             }
             result.addAll(urls);
