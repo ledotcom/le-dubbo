@@ -59,9 +59,6 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
     // 是否使用令牌
     protected String               token;
 
-    // 访问日志
-    protected String               accesslog;
-
     // 允许执行请求数
     private Integer                executes;
 
@@ -169,22 +166,6 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     public void setProtocol(ProtocolConfig protocol) {
         this.protocols = Arrays.asList(new ProtocolConfig[] {protocol});
-    }
-
-    public String getAccesslog() {
-        return accesslog;
-    }
-
-    public void setAccesslog(String accesslog) {
-        this.accesslog = accesslog;
-    }
-    
-    public void setAccesslog(Boolean accesslog) {
-        if (accesslog == null) {
-            setAccesslog((String) null);
-        } else {
-            setAccesslog(String.valueOf(accesslog));
-        }
     }
 
     public Integer getExecutes() {

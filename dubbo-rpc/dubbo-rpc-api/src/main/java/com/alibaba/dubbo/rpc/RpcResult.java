@@ -16,7 +16,9 @@
 package com.alibaba.dubbo.rpc;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,6 +36,10 @@ public class RpcResult implements Result, Serializable {
     private Throwable                exception;
 
     private Map<String, String>      attachments = new HashMap<String, String>();
+    
+    private List<String> filterElapseList = new ArrayList<>();
+    
+    private long elapsed;
 
     public RpcResult(){
     }
@@ -51,24 +57,6 @@ public class RpcResult implements Result, Serializable {
             throw exception;
         }
         return result;
-    }
-
-    /**
-     * @deprecated Replace to getValue()
-     * @see com.alibaba.dubbo.rpc.RpcResult#getValue()
-     */
-    @Deprecated
-    public Object getResult() {
-        return getValue();
-    }
-
-    /**
-     * @deprecated Replace to setValue()
-     * @see com.alibaba.dubbo.rpc.RpcResult#setValue()
-     */
-    @Deprecated
-    public void setResult(Object result) {
-        setValue(result);
     }
 
     public Object getValue() {
@@ -121,4 +109,18 @@ public class RpcResult implements Result, Serializable {
     public String toString() {
         return "RpcResult [result=" + result + ", exception=" + exception + "]";
     }
+
+	@Override
+	public void setElapsed(long elapsed) {
+		this.elapsed = elapsed;
+	}
+
+	@Override
+	public long getElapsed() {
+		return this.elapsed;
+	}
+
+	public List<String> getFilterElapseList() {
+		return filterElapseList;
+	}
 }

@@ -78,6 +78,8 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
         } else {
             currentClient = clients[index.getAndIncrement() % clients.length];
         }
+        // 设置本地ip用在在accesslog中使用
+        RpcContext.getContext().setLocalAddress(currentClient.getLocalAddress());
         try {
             boolean isAsync = RpcUtils.isAsync(getUrl(), invocation);
             boolean isOneway = RpcUtils.isOneway(getUrl(), invocation);

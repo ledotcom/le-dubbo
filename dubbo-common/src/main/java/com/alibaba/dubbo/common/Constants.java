@@ -237,6 +237,10 @@ public class Constants {
     public static final String  EXPORTER_LISTENER_KEY              = "exporter.listener";
 
     public static final String  ACCESS_LOG_KEY                     = "accesslog";
+    
+    public static final String  ACCESS_LOG_TYPE                    = "accesstype";
+    
+    public static final String  ACCESS_LOG_TYPE_DETAIL             = "detail";
 
     public static final String  ACTIVES_KEY                        = "actives";
 
@@ -358,6 +362,8 @@ public class Constants {
     public final static String  PATH_SEPARATOR                     = "/";
 
     public static final String  REGISTRY_SEPARATOR                 = "|";
+    
+    public static final String  KAFKA_SEPARATOR                    = "||";
 
     public static final Pattern REGISTRY_SPLIT_PATTERN             = Pattern
                                                                            .compile("\\s*[|;]+\\s*");
@@ -592,6 +598,18 @@ public class Constants {
     public static final String GENERIC_SERIALIZATION_DEFAULT       = "true";
 
     public static final String GENERIC_SERIALIZATION_BEAN          = "bean";
+
+    // 以下参数由于需要新增调用路径追踪而加
+	public static final String TRACE_ID                            = "traceID";
+
+	public static final String PARENT_CALL_ID                      = "pCallID";
+
+	public static final String CALL_ID                             = "callID";
+	
+	public static final String CALL_INFO                           = "callInfo";
+
+	public static final String CALL_ELAPSE_DETAIL               = "callElapseDetail";
+	
 
     /*
      * private Constants(){ }

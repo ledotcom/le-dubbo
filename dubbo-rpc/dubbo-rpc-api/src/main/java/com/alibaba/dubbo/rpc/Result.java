@@ -66,14 +66,6 @@ public interface Result {
     Object recreate() throws Throwable;
 
     /**
-     * @deprecated Replace to getValue()
-     * @see com.alibaba.dubbo.rpc.Result#getValue()
-     */
-    @Deprecated
-    Object getResult();
-
-
-    /**
      * get attachments.
      *
      * @return attachments.
@@ -93,5 +85,9 @@ public interface Result {
      * @return attachment value.
      */
     String getAttachment(String key, String defaultValue);
+
+	void setElapsed(long elapsed);
+	
+	long getElapsed();
 
 }

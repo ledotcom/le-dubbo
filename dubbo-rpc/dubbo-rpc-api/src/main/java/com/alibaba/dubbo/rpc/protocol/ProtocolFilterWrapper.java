@@ -27,6 +27,7 @@ import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Protocol;
 import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.RpcResult;
 
 /**
  * ListenerProtocol
@@ -70,6 +71,8 @@ public class ProtocolFilterWrapper implements Protocol {
         Invoker<T> last = invoker;
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
         if (filters.size() > 0) {
+        	final Filter lastFilter = filters.get(filters.size() - 1);
+        	//final Filter firstFilter = filters.get(0);
             for (int i = filters.size() - 1; i >= 0; i --) {
                 final Filter filter = filters.get(i);
                 final Invoker<T> next = last;
@@ -87,8 +90,21 @@ public class ProtocolFilterWrapper implements Protocol {
                         return invoker.isAvailable();
                     }
 
-                    public Result invoke(Invocation invocation) throws RpcException {
-                        return filter.invoke(next, invocation);
+					public Result invoke(Invocation invocation) throws RpcException {
+                    	long start = System.currentTimeMillis();
+                        Result result = filter.invoke(next, invocation);
+                        //System.out.println("-----Invoke "+filter.getClass().getName()+",elapsed:"+(System.currentTimeMillis()- result.getElapsed() - start));
+                        if(result instanceof RpcResult){
+                        	if(filter == lastFilter){
+                        		((RpcResult)result).getFilterElapseList().add(this.getInterface().getSimpleName()+":"+result.getElapsed()+"ms");
+                        	}
+                        	((RpcResult)result).getFilterElapseList().add(filter.getClass().getSimpleName()+":"+ (System.currentTimeMillis()- result.getElapsed() - start)+"ms");
+                        }
+                        result.setElapsed(System.currentTimeMillis()-start);
+                        /*if(filter == firstFilter){
+                        	System.out.println("ALL Invoke time:"+(System.currentTimeMillis()-start));
+                        }*/
+                        return result;
                     }
 
                     public void destroy() {

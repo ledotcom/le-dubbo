@@ -68,6 +68,9 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     // 过滤器
     protected String               filter;
     
+    // 访问日志
+    protected String               accesslog;
+    
     // 监听器
     protected String               listener;
 
@@ -400,6 +403,23 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     public void setFilter(String filter) {
         checkMultiExtension(Filter.class, "filter", filter);
         this.filter = filter;
+    }
+    
+    public void setAccesslog(String accesslog) {
+        this.accesslog = accesslog;
+    }
+    
+    public void setAccesslog(Boolean accesslog) {
+        if (accesslog == null) {
+            setAccesslog((String) null);
+        } else {
+            setAccesslog(String.valueOf(accesslog));
+        }
+    }
+    
+
+    public String getAccesslog() {
+        return accesslog;
     }
 
     @Parameter(key = Constants.INVOKER_LISTENER_KEY, append = true)

@@ -125,6 +125,10 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
                                             + " use dubbo version " + Version.getVersion()
                                             + " is DESTROYED, can not be invoked any more!");
         }
+        // 增加计时功能 Dimmacro 2016-4-14 21:23:33
+        long start = System.currentTimeMillis();
+        Result result ;
+        
         RpcInvocation invocation = (RpcInvocation) inv;
         invocation.setInvoker(this);
         if (attachment != null && attachment.size() > 0) {
@@ -141,26 +145,29 @@ public abstract class AbstractInvoker<T> implements Invoker<T> {
         
         
         try {
-            return doInvoke(invocation);
+        	result = doInvoke(invocation);
         } catch (InvocationTargetException e) { // biz exception
             Throwable te = e.getTargetException();
             if (te == null) {
-                return new RpcResult(e);
+            	result =  new RpcResult(e);
             } else {
                 if (te instanceof RpcException) {
                     ((RpcException) te).setCode(RpcException.BIZ_EXCEPTION);
                 }
-                return new RpcResult(te);
+                result =  new RpcResult(te);
             }
         } catch (RpcException e) {
             if (e.isBiz()) {
-                return new RpcResult(e);
+            	result =  new RpcResult(e);
             } else {
                 throw e;
             }
         } catch (Throwable e) {
-            return new RpcResult(e);
+        	result =  new RpcResult(e);
         }
+        //logger.debug("AbstractInvoker,Invoke "+this.getInterface()+",elapsed:"+(System.currentTimeMillis()-start));
+        result.setElapsed(System.currentTimeMillis()-start);
+        return result;
     }
 
     protected abstract Result doInvoke(Invocation invocation) throws Throwable;
