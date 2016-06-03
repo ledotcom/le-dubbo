@@ -53,8 +53,10 @@ public class Consumer extends Entity {
 	private Override override;
 
 	private List<Override> overrides;
+	
+	private String standardConf ; /* 标准参数 */
 
-    private List<Route> routes;
+	private List<Route> routes;
     
     private List<Provider> providers;
     
@@ -170,6 +172,15 @@ public class Consumer extends Entity {
 
     public List<Override> getOverrides() {
 		return overrides;
+	}
+    
+
+    public String getStandardConf() {
+		return standardConf;
+	}
+
+	public void setStandardConf(String standardConf) {
+		this.standardConf = standardConf;
 	}
 
 	public void setOverrides(List<Override> overrides) {

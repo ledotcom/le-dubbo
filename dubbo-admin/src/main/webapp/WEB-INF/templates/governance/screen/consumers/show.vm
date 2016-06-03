@@ -41,6 +41,10 @@
 		<td>consumer://$!consumer.address/$!consumer.service?$!consumer.parameters</td>
 	</tr>
 	<tr>
+		<th>$i18n.get("standard.parameters"): </th>
+		<td><font color="red">$!consumer.standardConf</font></td>
+	</tr>
+	<tr>
 		<th>$i18n.get("overrides"): </th>
 		<td>$!consumer.override.params</td>
 	</tr>

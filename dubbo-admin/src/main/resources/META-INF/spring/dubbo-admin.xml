@@ -13,16 +13,22 @@
 		<property name="locations">
 			<list>
 				<value>/WEB-INF/dubbo.properties</value>
-				<value>file://${user.home}/dubbo.properties</value>
+				<!-- <value>file://${user.home}/dubbo.properties</value> -->
 			</list>
 		</property>
 	</bean>
 	
 	<dubbo:application name="dubbo-admin" />
 
-	<dubbo:registry address="${dubbo.registry.address}" check="false" file="false" />
-
-	<dubbo:reference id="registryService" interface="com.alibaba.dubbo.registry.RegistryService" check="false" />
+	
+	 <!-- <dubbo:registry id="redisregistry" address="${dubbo.registry.address2}" username="${dubbo.registry.username}" password="${dubbo.registry.password}" >
+		<dubbo:parameter key="redis.type" value="sentinel"></dubbo:parameter>
+		<dubbo:parameter key="redis.databaseindex" value="0" />
+	 </dubbo:registry> -->
+	 
+	<dubbo:registry id="zkregistry" address="${dubbo.registry.address1}" check="false" file="false" client="curator" />
+	
+	<dubbo:reference id="registryService" interface="com.alibaba.dubbo.registry.RegistryService" check="false"/>
 
 	<bean id="configService" class="com.alibaba.dubbo.governance.service.impl.ConfigServiceImpl" />
 	

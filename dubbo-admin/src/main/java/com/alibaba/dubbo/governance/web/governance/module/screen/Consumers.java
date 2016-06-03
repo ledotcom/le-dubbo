@@ -23,6 +23,7 @@ import com.alibaba.dubbo.governance.service.OverrideService;
 import com.alibaba.dubbo.governance.service.ProviderService;
 import com.alibaba.dubbo.governance.service.RouteService;
 import com.alibaba.dubbo.governance.web.common.module.screen.Restful;
+import com.alibaba.dubbo.governance.web.util.StandardConfChecker;
 import com.alibaba.dubbo.registry.common.domain.Consumer;
 import com.alibaba.dubbo.registry.common.domain.Override;
 import com.alibaba.dubbo.registry.common.domain.Provider;
@@ -105,6 +106,7 @@ public class Consumers extends Restful {
     	List<Route> routed = new ArrayList<Route>();
         consumer.setProviders(RouteUtils.route(consumer.getService(), consumer.getAddress(), consumer.getParameters(), providers, overrides, routes, null, routed));
     	consumer.setRoutes(routed);
+    	consumer.setStandardConf(StandardConfChecker.getSpecialParameters(consumer.getParameters()));
     	OverrideUtils.setConsumerOverrides(consumer, overrides);
     	context.put("consumer", consumer);
     	context.put("providers", consumer.getProviders());
