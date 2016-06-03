@@ -9,7 +9,7 @@
 		</layout>
 	</appender>
 	<appender name="FILE" class="org.apache.log4j.RollingFileAppender">
-		<param name="file" value="/letv/server/logs/dubboAdmin/dubbo-governance.log" />
+		<param name="file" value="dubbo-governance.log" />
 		<param name="append" value="true" />
 		<param name="maxFileSize" value="10MB" />
 		<param name="maxBackupIndex" value="100" />
