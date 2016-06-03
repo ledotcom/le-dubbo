@@ -147,7 +147,9 @@ public abstract class AbstractRegistry implements Registry {
             this.version = version;
         }
         public void run() {
-            doSaveProperties(version);
+        	synchronized(SaveProperties.class){
+        		doSaveProperties(version);
+        	}
         }
     }
     
