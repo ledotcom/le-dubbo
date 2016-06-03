@@ -238,7 +238,7 @@ public class DubboProtocol extends AbstractProtocol {
         // export service.
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
-        exporterMap.put(key, exporter);
+        ((ConcurrentHashMap<String, Exporter<?>>)exporterMap).putIfAbsent(key, exporter);
         
         //export an stub service for dispaching event
         Boolean isStubSupportEvent = url.getParameter(Constants.STUB_EVENT_KEY,Constants.DEFAULT_STUB_EVENT);

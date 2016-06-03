@@ -17,6 +17,7 @@
 package com.alibaba.dubbo.rpc.protocol;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.alibaba.dubbo.common.URL;
@@ -80,7 +81,8 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
                 }
             }
         };
-        exporterMap.put(uri, exporter);
+        // 对于相同的服务，如果已经存在，则不覆盖，这样双注册中心就可以以第一个为准，以消费端一致了 Dimmacro 2016年4月7日14:17:53
+        ((ConcurrentHashMap<String, Exporter<?>>)exporterMap).putIfAbsent(uri, exporter);
         return exporter;
     }
 
