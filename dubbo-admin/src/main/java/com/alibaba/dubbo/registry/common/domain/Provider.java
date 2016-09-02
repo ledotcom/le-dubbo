@@ -60,8 +60,10 @@ public class Provider extends Entity {
     private Override override;
 
 	private List<Override> overrides;
-    
-    public Provider() {
+	
+	private String standardConf ; /* 标准参数 */
+
+	public Provider() {
     }
     
     public Provider(Long id) {
@@ -212,5 +214,14 @@ public class Provider extends Entity {
         
         return url;
     }
+    
+    
+    public String getStandardConf() {
+		return standardConf;
+	}
+
+	public void setStandardConf(String standardConf) {
+		this.standardConf = standardConf;
+	}
 	
 }
