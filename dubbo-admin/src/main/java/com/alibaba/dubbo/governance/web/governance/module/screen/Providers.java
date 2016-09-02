@@ -22,6 +22,7 @@ import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.governance.service.OverrideService;
 import com.alibaba.dubbo.governance.service.ProviderService;
 import com.alibaba.dubbo.governance.web.common.module.screen.Restful;
+import com.alibaba.dubbo.governance.web.util.StandardConfChecker;
 import com.alibaba.dubbo.registry.common.domain.Override;
 import com.alibaba.dubbo.registry.common.domain.Provider;
 import com.alibaba.dubbo.registry.common.route.OverrideUtils;
@@ -153,6 +154,7 @@ public class Providers extends Restful {
 			List<Override> overrides = overrideService.findByServiceAndAddress(provider.getService(), provider.getAddress());
 	        OverrideUtils.setProviderOverrides(provider, overrides);
         }
+        provider.setStandardConf(StandardConfChecker.getSpecialParameters(provider.getParameters()));
         context.put("provider", provider);
     }
     
