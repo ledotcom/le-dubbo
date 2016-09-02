@@ -51,16 +51,17 @@ import com.alibaba.dubbo.rpc.RpcResult;
  */
 @Activate(group = { Constants.PROVIDER, Constants.CONSUMER }, order = Integer.MIN_VALUE)
 public class AccessLogFilter implements Filter {
-
+	private static final String ACCLOG_PREFIX = "true";
+	private static final String ACCLOG_SUFFIX = "-detail";
+	
 	private static final Logger logger = LoggerFactory.getLogger(AccessLogFilter.class);
 	
 	private static final String ACCESS_LOG_KEY = "dubbo.accesslog";
 
 	public Result invoke(Invoker<?> invoker, Invocation inv) throws RpcException {
 		String accesslog = invoker.getUrl().getParameter(Constants.ACCESS_LOG_KEY);
-		boolean isAccessLog = ConfigUtils.isNotEmpty(accesslog);
-		if (!isAccessLog) {
-			return invoker.invoke(inv); // 如果没有配置accesslog,直接下一个filter调用
+		if (ConfigUtils.isEmpty(accesslog) || !accesslog.startsWith(ACCLOG_PREFIX)) {
+			return invoker.invoke(inv); // 如果没有配置accesslog或不是以true开头,则直接下一个filter调用
 		}
 		long start = System.currentTimeMillis();
 
@@ -104,8 +105,7 @@ public class AccessLogFilter implements Filter {
 			}
 			long totalElapse = System.currentTimeMillis() - start;
 			// 判断是否设置了accesslogdetail信息
-			boolean isDetail = isAccessLog && (accesslog.length() > 7) && "-detail".equalsIgnoreCase(accesslog.substring(accesslog.length() - 7));
-			if (isDetail) {
+			if (accesslog.endsWith(ACCLOG_SUFFIX)) {
 				sn.append("\"").append("detailInfo").append("\"").append(":{");
 				sn.append("\"").append("methodParameterTypes").append("\"").append(":").append("\"");
 				Class<?>[] types = inv.getParameterTypes();
