@@ -33,6 +33,10 @@
 		<th style="width: 100px;">$i18n.get("url"): </th>
 		<td>$!provider.url?$!provider.parameters</td>
 	</tr>
+	<tr>
+		<th>$i18n.get("standard.parameters"): </th>
+		<td><font color="red">$!provider.standardConf</font></td>
+	</tr>
 	#if($provider.dynamic)
 	<tr>
 		<th>$i18n.get("overrides"): </th>
