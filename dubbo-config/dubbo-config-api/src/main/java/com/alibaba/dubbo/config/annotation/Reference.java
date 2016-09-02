@@ -48,7 +48,7 @@ public @interface Reference {
 
     boolean injvm() default false;
 
-    boolean check() default true;
+    boolean check() default true; //同步dubbox 2016年8月29日19:13:45 Dimmacro
 
     boolean init() default false;
 
