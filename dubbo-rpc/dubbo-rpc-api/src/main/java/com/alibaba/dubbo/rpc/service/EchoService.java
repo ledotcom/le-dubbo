@@ -29,6 +29,6 @@ public interface EchoService {
      * @param message message.
      * @return message.
      */
-    String $echo(Object message);
+    Object $echo(Object message);
 
 }
