@@ -30,7 +30,8 @@
     <!-- here we demonstrate both annotation-based and xml-based configs -->
     <dubbo:annotation package="com.alibaba.dubbo.demo.user.facade" />
 
-    <dubbo:protocol name="dubbo" serialization="kryo" optimizer="com.alibaba.dubbo.demo.SerializationOptimizerImpl"/>
+    <!-- optimizer="com.alibaba.dubbo.demo.SerializationOptimizerImpl" -->
+    <dubbo:protocol name="dubbo" serialization="kryo"/>
     <!--<dubbo:protocol name="dubbo" serialization="fst" optimizer="com.alibaba.dubbo.demo.SerializationOptimizerImpl"/>-->
 
     <!--<dubbo:protocol name="dubbo" serialization="nativejava"/>-->
