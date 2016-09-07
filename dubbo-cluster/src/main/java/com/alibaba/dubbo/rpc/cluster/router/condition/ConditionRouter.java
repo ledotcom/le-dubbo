@@ -215,17 +215,20 @@ public class ConditionRouter implements Router, Comparable<Router> {
         final Set<String> matches = new HashSet<String>();
         final Set<String> mismatches = new HashSet<String>();
         public boolean isMatch(String value, URL param) {
-            for (String match : matches) {
-                if (! UrlUtils.isMatchGlobPattern(match, value, param)) {
-                    return false;
-                }
-            }
             for (String mismatch : mismatches) {
                 if (UrlUtils.isMatchGlobPattern(mismatch, value, param)) {
                     return false;
                 }
             }
-            return true;
+            if(mismatches.size() > 0 && matches.size() == 0){
+                return true;
+            }
+            for (String match : matches) {
+                if (UrlUtils.isMatchGlobPattern(match, value, param)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
