@@ -214,18 +214,33 @@ public class ConditionRouter implements Router, Comparable<Router> {
     private static final class MatchPair {
         final Set<String> matches = new HashSet<String>();
         final Set<String> mismatches = new HashSet<String>();
+        /**
+         * 根据输入的值判断是否匹配
+         * @param value
+         * @param param
+         * @return
+         */
         public boolean isMatch(String value, URL param) {
-            for (String match : matches) {
-                if (! UrlUtils.isMatchGlobPattern(match, value, param)) {
-                    return false;
-                }
-            }
+            //判断不匹配条件，满足不匹配条件，返回false
             for (String mismatch : mismatches) {
                 if (UrlUtils.isMatchGlobPattern(mismatch, value, param)) {
                     return false;
                 }
             }
-            return true;
+            //如果没有满足不匹配条件，并且没有设置匹配条件，返回true
+            if(mismatches.size() > 0 && matches.size() == 0){
+                return true;
+            }
+            //判断匹配条件，满足匹配条件，返回true
+            for (String match : matches) {
+                if (UrlUtils.isMatchGlobPattern(match, value, param)) {
+                    return true;
+                }
+            }
+            //到这里只会有2种情况
+            //1、没有设置匹配条件，也没有设置不匹配条件
+            //2、没有满足不匹配条件或者没有设置不匹配条件，但不满足匹配条件
+            return false;
         }
     }
 }
