@@ -1,0 +1,22 @@
+﻿
+修改注意：
+
+1) 添加了新的模块，要在POM中maven-shade-plugin的<artifactSet>中添加<include>
+
+2) 添加了新的扩展点，要在POM中maven-shade-plugin加上<transformer>
+
+搜索出 扩展点配置文件 的命令
+
+$ find . -wholename */META-INF/dubbo/* -type f | grep -vF /test/ | awk -F/ '{print $NF}' | sort -u
+com.alibaba.dubbo.cache.CacheFactory
+com.alibaba.dubbo.common.compiler.Compiler
+com.alibaba.dubbo.common.extension.ExtensionFactory
+...and so on...
+
+
+####定制化修改流程，Dimmacro 2015年9月16日14:09:20########
+商城根据需要如果修改dubbox源码，找到具体类所在maven模块，执行如下操作过程：
+1.修改类源代码；
+2.重新打完整包，在dubbo目录下clean,compile,package(如果在dos下用mven命令打包，一定要注意jdk的版本为1.7，因为打包出来的dubbox.jar用的jdk版本要和工程里引用此jar的jdk版本一致，否则会报错)
+3.如果要deploy，在dubbo目录下运行mvn -Dmaven.test.skip=true deploy
+4.更新dubbo后，在引用的工程上右击maven工程，执行maven update (如果是非maven工程，可将得到的新dubbo-2.8.4.jar替换就的jar)
