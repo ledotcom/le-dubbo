@@ -225,8 +225,12 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             Map<String, List<Invoker<T>>> newMethodInvokerMap = toMethodInvokers(newUrlInvokerMap); // 换方法名映射Invoker列表
             // state change
             //如果计算错误，则不进行处理.
+            // 修复le-dubbo bug#1,禁用所有服务提供者后无效果的问题 Dimmacro 2016年9月6日14:53:57
             if (newUrlInvokerMap == null || newUrlInvokerMap.size() == 0 ){
                 logger.error(new IllegalStateException("urls to invokers error .invokerUrls.size :"+invokerUrls.size() + ", invoker.size :0. urls :"+invokerUrls.toString()));
+                this.forbidden = true; // 禁止访问
+                this.methodInvokerMap = null; // 置空列表
+                destroyAllInvokers(); // 关闭所有Invoker
                 return ;
             }
             this.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(newMethodInvokerMap) : newMethodInvokerMap;
