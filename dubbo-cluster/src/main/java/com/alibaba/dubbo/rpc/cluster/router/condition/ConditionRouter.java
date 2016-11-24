@@ -215,9 +215,10 @@ public class ConditionRouter implements Router, Comparable<Router> {
         final Set<String> matches = new HashSet<String>();
         final Set<String> mismatches = new HashSet<String>();
         public boolean isMatch(String value, URL param) {
+        	// 修改匹配的处理逻辑，match要全部查一遍 Dimmacro 2016年9月6日19:17:55
             for (String match : matches) {
-                if (! UrlUtils.isMatchGlobPattern(match, value, param)) {
-                    return false;
+                if (UrlUtils.isMatchGlobPattern(match, value, param)) {
+                    return true;
                 }
             }
             for (String mismatch : mismatches) {
@@ -225,7 +226,7 @@ public class ConditionRouter implements Router, Comparable<Router> {
                     return false;
                 }
             }
-            return true;
+            return false;
         }
     }
 }
